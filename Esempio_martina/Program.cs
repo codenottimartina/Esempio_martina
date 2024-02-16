@@ -23,8 +23,9 @@
 
 var listaNumeri = new List<int>();
 
-int? min = Utilities.AcquisisciInteroDaConsole("Inserisci il valore della soglia minima", -10, null);
-int? max = Utilities.AcquisisciInteroDaConsole("Inserisci un valore massimo", null, 10);
+int? min = Utilities.AcquisisciMinMax("Inserisci il valore della soglia minima", -10, null);
+int? max = Utilities.AcquisisciMinMax("Inserisci il valore della soglia massima", min, 10);
+
 var sogliaNumeri = Utilities.AcquisisciInteroDaConsole("Quale valore soglia desideri impostare?", min, max);
 var contoNumeri = Utilities.AcquisisciInteroDaConsole("Quanti valori interi desideri inserire?", min, max);
 
@@ -49,51 +50,51 @@ Console.ReadLine();
 
 public static class Utilities
 {
-
-    public static int? AcquisisciMinMax(string messaggioUtente)
+    public static int? AcquisisciMinMax(string messaggioUtente, int? min, int? max)
     {
-        int? toReturn = null;
+        var messaggioComplessivo = _getMessaggioConWarningSoglie(messaggioUtente, min, max);
 
-        Console.WriteLine(messaggioUtente);
+        Console.WriteLine(messaggioComplessivo);
         var stringaAcquisita = Console.ReadLine();
 
-        if(stringaAcquisita != "")
+        int? toReturn = null;
+
+        try
         {
-            try
+            if (stringaAcquisita != "")
             {
-                toReturn = Convert.ToInt32(stringaAcquisita);  
+                toReturn = Convert.ToInt32(stringaAcquisita);
+                if(!(_checkNumValidoSogliaMin(toReturn.Value, min) && _checkNumValidoSogliaMax(toReturn.Value, max)))
+                {
+                    return AcquisisciMinMax(messaggioUtente, min, max);
+                }
             }
-            catch
-            {
-                Console.WriteLine("Attenzione, il numero inserito non è un intero valido");
-            }
+        }
+        catch
+        {
+            Console.WriteLine("Attenzione, il valore inserito non è un valore valido");
+            return AcquisisciMinMax(messaggioUtente, min, max);
         }
 
         return toReturn;
     }
-
     public static int AcquisisciInteroDaConsole(string messaggioUtente, int? min, int? max)
     {
         var messaggioComplessivo = _getMessaggioConWarningSoglie(messaggioUtente, min, max);
-        
+
         Console.WriteLine(messaggioComplessivo);
 
         int? toReturn = null;
 
         while(toReturn == null)
         {
-            var numeroAcquisitoNullabile = _acquisisciNumeroIntero();
-
-            if (numeroAcquisitoNullabile != null 
-                && _checkNumValidoSogliaMin(numeroAcquisitoNullabile.Value, min) 
-                && _checkNumValidoSogliaMax(numeroAcquisitoNullabile.Value, max))
+            var numeroAcquisito = _acquisisciNumeroIntero();
+            
+            if (_checkNumValidoSogliaMin(numeroAcquisito, min) 
+                && _checkNumValidoSogliaMax(numeroAcquisito, max))
             {
-                toReturn = numeroAcquisitoNullabile.Value;
+                toReturn = numeroAcquisito;
             } 
-            else
-            {
-                Console.WriteLine("Attenzione, il numero inserito non è un intero valido");
-            }
         }
 
         return toReturn.Value;
@@ -104,6 +105,11 @@ public static class Utilities
         if (min == null)
             return true;
 
+        if(numeroAcquisito < min.Value)
+        {
+            Console.WriteLine("Attenzione, il valore inserito non può essere minore della soglia minima");
+        }
+
         return numeroAcquisito >= min.Value;
     }
 
@@ -112,21 +118,32 @@ public static class Utilities
         if (max == null)
             return true;
 
+        if (numeroAcquisito > max.Value)
+        {
+            Console.WriteLine("Attenzione, il valore inserito non può essere maggiore della soglia massima");
+        }
+
         return numeroAcquisito <= max.Value;
     }
 
-    private static int? _acquisisciNumeroIntero()
+    private static int _acquisisciNumeroIntero()
     {
-        var stringaAcquisita = Console.ReadLine();
+        int count = 0;
+        string stringaAcquisita;
+        int toReturn;
+        do
+        {
+            if (count > 0)
+            {
+                Console.WriteLine("Attenzione, il valore inserito non può essere nullo");
+            }
+            stringaAcquisita = Console.ReadLine();
+            count++;
 
-        try
-        {
-            return Convert.ToInt32(stringaAcquisita);
         }
-        catch
-        {
-            return null;
-        }
+        while (!Int32.TryParse(stringaAcquisita, out toReturn));
+
+        return toReturn;
     }
 
     private static string _getMessaggioConWarningSoglie(string messaggioUtente, int? min, int? max)
